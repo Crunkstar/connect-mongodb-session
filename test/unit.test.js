@@ -385,7 +385,7 @@ describe('connectMongoDBSession', function() {
       });
     });
 
-    /** For backwards compatibility with connect-mongo */
+    /** For backwards compatibility with express-mongo */
     it('converts cookies to JSON strings', function(done) {
       var SessionStore = connectMongoDBSession({ Store: StoreStub });
 
@@ -406,7 +406,7 @@ describe('connectMongoDBSession', function() {
       });
     });
 
-    /** For backwards compatibility with connect-mongo */
+    /** For backwards compatibility with express-mongo */
     it('unless they do not have a toJSON()', function(done) {
       var SessionStore = connectMongoDBSession({ Store: StoreStub });
 

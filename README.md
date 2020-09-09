@@ -1,9 +1,9 @@
-# connect-mongodb-session
+# express-mongodb-session
 
-[MongoDB](http://mongodb.com)-backed session storage for [connect](https://www.npmjs.org/package/connect) and [Express](http://www.expressjs.com). Meant to be a well-maintained and fully-featured replacement for modules like [connect-mongo](https://www.npmjs.org/package/connect-mongo)
+[MongoDB](http://mongodb.com)-backed session storage for [connect](https://www.npmjs.org/package/connect) and [Express](http://www.expressjs.com). Meant to be a well-maintained and fully-featured replacement for modules like [express-mongo](https://www.npmjs.org/package/express-mongo)
 
-[![Build Status](https://travis-ci.org/mongodb-js/connect-mongodb-session.svg?branch=master)](https://travis-ci.org/mongodb-js/connect-mongodb-session) [![Coverage Status](https://coveralls.io/repos/mongodb-js/connect-mongodb-session/badge.svg?branch=master)](https://coveralls.io/r/mongodb-js/connect-mongodb-session?branch=master)
-
+This Fork adds the ability to use an existing MongoClient.
+This is not production-ready at all, just a quick hack
 
 
 # MongoDBStore
@@ -24,7 +24,7 @@ in MongoDB.
 
 The MongoDBStore class has 3 required options:
 
-1. `uri`: a [MongoDB connection string](http://docs.mongodb.org/manual/reference/connection-string/)
+1. `uri`: a [MongoDB connection string](http://docs.mongodb.org/manual/reference/connection-string/) || `existingConnection`: an existing MongoClient
 2. `databaseName`: the MongoDB database to store sessions in
 3. `collection`: the MongoDB collection to store sessions in
 
@@ -33,14 +33,14 @@ but this is entirely optional. The Express 3.x example demonstrates
 that you can use the MongoDBStore class in a synchronous-like style: the
 module will manage the internal connection state for you.
 
-
+Creating new connection
 ```javascript
-var express = require('express');
-var session = require('express-session');
-var MongoDBStore = require('connect-mongodb-session')(session);
+const express = require('express');
+const session = require('express-session');
+const MongoDBStore = require('express-mongodb-session')(session);
 
-var app = express();
-var store = new MongoDBStore({
+const app = express();
+const store = new MongoDBStore({
   uri: 'mongodb://localhost:27017/connect_mongodb_session_test',
   collection: 'mySessions'
 });
@@ -67,7 +67,26 @@ app.get('/', function(req, res) {
   res.send('Hello ' + JSON.stringify(req.session));
 });
 
-server = app.listen(3000);
+const server = app.listen(3000);
+```
+
+Using existing connection
+```javascript
+const express = require('express');
+const session = require('express-session');
+
+const { MongoClient } = require('mongodb');
+const mongo = new MongoClient(`mongodb://localhost:27017/connect_mongodb_session_test`);
+
+const MongoDBStore = require('express-mongodb-session')(session);
+
+const app = express();
+const store = new MongoDBStore({
+  existingConnection: mongo,
+  collection: 'mySessions'
+});
+
+/* same as above example */
 ```
 
 ## It throws an error when it can't connect to MongoDB
@@ -81,7 +100,7 @@ errors. If you don't pass a callback to the `MongoDBStore` constructor,
 ```javascript
 var express = require('express');
 var session = require('express-session');
-var MongoDBStore = require('connect-mongodb-session')(session);
+var MongoDBStore = require('express-mongodb-session')(session);
 
 var app = express();
 var numExpectedSources = 2;
@@ -128,7 +147,7 @@ There are several other options you can pass to `new MongoDBStore()`:
 ```javascript
 var express = require('express');
 var session = require('express-session');
-var MongoDBStore = require('connect-mongodb-session')(session);
+var MongoDBStore = require('express-mongodb-session')(session);
 
 var store = new MongoDBStore({
   uri: 'mongodb://localhost:27017/connect_mongodb_session_test',

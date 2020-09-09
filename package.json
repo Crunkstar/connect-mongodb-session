@@ -1,18 +1,17 @@
 {
-  "name": "connect-mongodb-session",
-  "version": "2.4.1",
-  "description": "MongoDB session store for connect/express built by MongoDB",
+  "name": "express-mongodb-session",
+  "version": "2.5.0",
+  "description": "MongoDB session store for express",
   "keywords": [
-    "connect",
     "mongo",
     "mongodb",
     "session",
     "express"
   ],
-  "author": "Valeri Karpov <valeri.karpov@mongodb.com>",
+  "author": "Crunkstar <crunk@0x657865.net",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/connect-mongodb-session.git"
+    "url": "https://github.com/crunkstar/express-mongodb-session.git"
   },
   "dependencies": {
     "archetype": "0.12.x",

@@ -49,7 +49,7 @@ describe('MongoDBStore', function() {
   it('can store sessions for Express 4', function(done) {
     var express = require('express');
     var session = require('express-session');
-    var MongoDBStore = require('connect-mongodb-session')(session);
+    var MongoDBStore = require('express-mongodb-session')(session);
 
     var app = express();
     var store = new MongoDBStore({
@@ -131,7 +131,7 @@ describe('MongoDBStore', function() {
   it('throws an error when it can\'t connect to MongoDB', function(done) {
     var express = require('express');
     var session = require('express-session');
-    var MongoDBStore = require('connect-mongodb-session')(session);
+    var MongoDBStore = require('express-mongodb-session')(session);
 
     var app = express();
     var numExpectedSources = 2;
@@ -183,7 +183,7 @@ describe('MongoDBStore', function() {
   it('supports several other options', function() {
     var express = require('express');
     var session = require('express-session');
-    var MongoDBStore = require('connect-mongodb-session')(session);
+    var MongoDBStore = require('express-mongodb-session')(session);
 
     var store = new MongoDBStore({
       uri: 'mongodb://localhost:27017/connect_mongodb_session_test',
