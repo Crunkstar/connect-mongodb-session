@@ -7,7 +7,7 @@ const mongodb = require('mongodb');
 const OptionsType = new Archetype({
   uri: {
     $type: 'string',
-    $required: true,
+    $required: false,
     $default: 'mongodb://localhost:27017/test'
   },
   collection: {
@@ -16,6 +16,7 @@ const OptionsType = new Archetype({
     $default: 'sessions'
   },
   connectionOptions: {
+    $required: false,
     $type: Object,
     $default: () => ({ useNewUrlParser: true, useUnifiedTopology : true })
   },
@@ -67,37 +68,82 @@ module.exports = function(connect) {
       options = options || {};
     }
 
+    if(typeof options.existingConnection !== 'undefined'){
+      this.__ec_tmp = options.existingConnection;
+      delete options.existingConnection;
+    }
+
     options = new OptionsType(options);
+
+    if(typeof this.__ec_tmp !== 'undefined'){
+      options.existingConnection=this.__ec_tmp;
+      delete this.__ec_tmp;
+    }
 
     Store.call(this, options);
     this.options = options;
 
     const connOptions = options.connectionOptions;
-    mongodb.MongoClient.connect(options.uri, connOptions, function(error, client) {
-      if (error) {
-        var e = new Error('Error connecting to db: ' + error.message);
-        return _this._errorHandler(e, callback);
-      }
-
+    if(options.existingConnection !== null){
+      const client = options.existingConnection;
+      
       const db = options.databaseName == null ?
         client.db() :
         client.db(options.databaseName);
       _this.client = client;
       _this.db = db;
-
-      db.
-        collection(options.collection).
-        createIndex({ expires: 1 }, { expireAfterSeconds: 0 }, function(error) {
-          if (error) {
-            const e = new Error('Error creating index: ' + error.message);
+      
+      db.command({ping: 1}, (err, collection)=>{
+        if (err) {
+          var e = new Error('Error using existing connection: ' + err.message);
+          return _this._errorHandler(e, callback);
+        }
+        db.
+        collection(options.collection).deleteMany({}, err=>{
+          if (err) {
+            const e = new Error('Error dropping old data: ' + err.message);
             return _this._errorHandler(e, callback);
           }
-
-          _this._emitter.emit('connected');
-
-          return callback && callback();
-        });
-    });
+          db.collection(options.collection).createIndex({ expires: 1 }, { expireAfterSeconds: 0 }, function(error) {
+            if (error) {
+              const e = new Error('Error creating index: ' + error.message);
+              return _this._errorHandler(e, callback);
+            }
+    
+            _this._emitter.emit('connected');
+    
+            return callback && callback();
+          });
+        })
+      })
+    }
+    else{
+      mongodb.MongoClient.connect(options.uri, connOptions, function(error, client) {
+        if (error) {
+          var e = new Error('Error connecting to db: ' + error.message);
+          return _this._errorHandler(e, callback);
+        }
+  
+        const db = options.databaseName == null ?
+          client.db() :
+          client.db(options.databaseName);
+        _this.client = client;
+        _this.db = db;
+  
+        db.
+          collection(options.collection).
+          createIndex({ expires: 1 }, { expireAfterSeconds: 0 }, function(error) {
+            if (error) {
+              const e = new Error('Error creating index: ' + error.message);
+              return _this._errorHandler(e, callback);
+            }
+  
+            _this._emitter.emit('connected');
+  
+            return callback && callback();
+          });
+      });
+    }
   };
 
   MongoDBStore.prototype = Object.create(Store.prototype);
@@ -195,6 +241,32 @@ module.exports = function(connect) {
         callback && callback();
       });
   };
+
+  MongoDBStore.prototype.close = function(callback){
+    const _this = this;
+    if (!this.db) {
+      return this._emitter.once('connected', function() {
+        _this.clear.call(_this, callback);
+      });
+    }
+
+    this.db.collection(this.options.collection).
+      deleteMany({}, function(error) {
+        if (error) {
+          const e = new Error('Error clearing all sessions: ' + error.message);
+          // return _this._errorHandler(e, callback);
+          callback && callback();
+        }
+        if(typeof _this.options.existingConnection !== 'undefined'){
+          callback && callback();
+        }
+        else{
+          _this._client.close(false, v=>{
+            callback && callback();
+          });
+        }
+      });
+  }
 
   MongoDBStore.prototype.set = function(id, session, callback) {
     const _this = this;
